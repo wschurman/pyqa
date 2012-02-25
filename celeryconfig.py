@@ -1,4 +1,4 @@
-BROKER_URL = "amqp://guest:guest@ec2-184-73-79-244.compute-1.amazonaws.com:5672//"
+BROKER_URL = "amqp://celery:9PxyWcTUNDr6UZB6qcU@ec2-184-73-79-244.compute-1.amazonaws.com:5672/celeryv/"
 
 CELERY_RESULT_BACKEND = "redis"
 CELERY_REDIS_HOST = "128.84.65.168"
