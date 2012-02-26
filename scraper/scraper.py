@@ -1,6 +1,5 @@
 # Requires: mechanize, beautifulsoup, lxml
 
-import sys, time, os
 from threading import Thread
 from mechanize import Browser
 from bs4 import BeautifulSoup
@@ -16,11 +15,11 @@ class Scraper(Thread):
 		br.open(self.url)
 		self.links = br.links()
 		self.html = br.response.read()
+		self.process_html()
 		
 	def get_links(self):
 		return self.links()
 		
 	def process_html(self):
 		soup = BeautifulSoup(self.html)
-		content = soup.body
-		return body
+		self.body = soup.body
