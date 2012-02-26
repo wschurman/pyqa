@@ -1,1 +1,1 @@
-from scraper import Scraper
+from scrape_data import ScrapeData

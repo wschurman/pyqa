@@ -1,10 +1,11 @@
 # Requires: celery, mechanize, beautifulsoup, lxml
 from celery.task import task
 from threading import Thread, Lock
-from mechanize import Browser
-from bs4 import BeautifulSoup
 from Queue import Queue, Empty
-#import scraper
+import re
+import mechanize
+from bs4 import BeautifulSoup
+from scraper import ScrapeData
 
 num_workers = 4
 
@@ -13,33 +14,7 @@ urls = Queue()
 
 r_lock = Lock()
 results = []
-
-class ScrapeData:
-	
-	def __init__(self, url, depth):
-		self.url = url
-		self.scraped = False
-		self.depth = depth
-	
-	def __hash__(self):
-		return self.url
-	
-	def scraped(self):
-		return self.scraped
-	
-	def get_url(self):
-		return self.url
-	
-	def set_content(self, c):
-		self.content = c
-		self.scraped = True
-		
-	def get_content(self):
-		return self.content
-	
-	def get_depth(self):
-		return self.depth
-
+			
 
 class ScraperWorker(Thread):
 	
@@ -52,35 +27,36 @@ class ScraperWorker(Thread):
 	def run(self):
 		global urls, visited, r_lock
 		
+		br = mechanize.Browser()
+		
 		try:
 			while True:
 				self.scrape_data = urls.get(False, self.timeout)		
-				
+				if self.scrape_data.get_depth() < 0: continue
 				try:
-					br = Browser()
-					br.open(self.scrape_data.get_url())
-					assert br.viewing_html()
+					response = br.open(self.scrape_data.get_url())
 					
 					for link in br.links():
-						if link.base_url not in visited:
-							urls.put(ScrapeData(link.base_url, self.scrape_data.get_depth() - 1))
-							visited.add(link.base_url)
+						furl = link.url if "http://" in link.url else link.base_url + link.url
+						if furl not in visited:
+							urls.put(ScrapeData(furl, self.scrape_data.get_depth() - 1))
+							visited.add(furl)
 					
-					resp = br.response
-					print br.title()
-					soup = BeautifulSoup(resp.get_data())
-					self.scrape_data.set_content(soup.body)
+					html = response.read()
+					soup = BeautifulSoup(html)
+					self.scrape_data.set_content(str(soup.title))
 					with r_lock:
-						results.append(self.scrape_data)
+						results.append(self.scrape_data.get_content())
 						self.scrape_data = None
 				except Exception as e:
-					print e
+					print e, self.scrape_data.get_url()
+					self.scrape_data = None
 		except Empty:
 			pass
-			
+
 
 @task
-def crawl(url, maxdepth):
+def crawl(url, maxdepth, topic):
 	global urls, visited
 	if maxdepth == 0: return -1
 	
@@ -95,6 +71,7 @@ def crawl(url, maxdepth):
 	
 	for worker in workers:
 		worker.join()
-		
-if __name__ == '__main__':
-	crawl("http://wschurman.com/", 3)
+	
+	return results
+	
+#crawl("http://stackoverflow.com/questions/4744426/python-threading-with-global-variables", 1, 0)
