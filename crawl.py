@@ -4,7 +4,6 @@ from threading import Thread, Lock
 from Queue import Queue, Empty
 import re
 import mechanize
-from bs4 import BeautifulSoup
 from scraper import ScrapeData
 
 num_workers = 4
@@ -43,8 +42,7 @@ class ScraperWorker(Thread):
 							visited.add(furl)
 					
 					html = response.read()
-					soup = BeautifulSoup(html)
-					self.scrape_data.set_content(str(soup.title))
+					self.scrape_data.set_content(str(html))
 					with r_lock:
 						results.append(self.scrape_data.get_content())
 						self.scrape_data = None

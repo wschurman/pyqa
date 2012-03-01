@@ -23,3 +23,9 @@ class ScrapeData:
 	
 	def get_depth(self):
 		return self.depth
+		
+	def set_parsed_data(self, d):
+		self.data = d
+		
+	def get_parsed_data(self):
+		return self.data
