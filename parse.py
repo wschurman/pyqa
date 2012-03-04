@@ -13,6 +13,3 @@ def parse(scrapedata, p):
 	
 	parser_module.parse()
 	return parser_module.get_results()
-
-
-print parse(ScrapeData("http://google.com", 4), "keyword")
