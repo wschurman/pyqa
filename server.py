@@ -10,32 +10,44 @@ query_threads = dict()
 qid_counter = 0
 qid_lock = Lock()
 
-class MonitorThread(Thread):
+class QueryThread(Thread):
 	
 	def __init__(self, q, d, qid):
 		self.start_url = "http://www.google.com/search?q=" + q
 		self.max_depth = d
 		self.qid = qid
+		self.qstatus = "Waiting"
+		self.crawlstatus = None
+		self.parsestatus = None
+		self.dbkey = None
 		Thread.__init__(self)
 	
 	def run(self):
+		self.qstatus = "Running"
 		self.crawl_async_result = crawl.delay(self.start_url, self.max_depth)
 		while not self.crawl_async_result.ready():
 			time.sleep(0)
+		self.crawlstatus = "Done"
 		self.parse_async_result = parse.delay(self.crawl_async_result.result, "keyword")
 		while not self.parse_async_result.ready():
 			time.sleep(0)
+		self.parsestatus = "Done"
 		
 		insert_into_db(self.parse_async_result.result)
 	
 	def insert_into_db(data):
+		self.dbkey = "Hello" #FAKE
+		self.qstatus = "Done" #after insert to DB
 		pass
-
-def get_query_status(qid):
-	return json.dumps({ "this is a fake" : "query status" })
 	
-def make_json(status, data):
-	return json.dumps({ 'status' : status, 'data' : data });
+	def get_status():
+		return {"status":self.qstatus, "crawlstatus":self.crawlstatus, "parsestatus":self.parsestatus, "dbkey":self.dbkey}
+
+# return either waiting, running, or done
+# if running, return some sort of status data
+# if done, return info necessary to query data from mongoDB
+def get_query_status(qid):
+	return json.dumps(query_threads[qid].get_status())
 
 @get('/api/status')
 def apistatus():
@@ -61,11 +73,11 @@ def run_query():
 		with qid_lock:
 			qid_counter += 1
 			qid = qid_counter
-		t = MonitorThread(r.query, r.depth, qid)
+		t = QueryThread(r.query, r.depth, qid)
 		query_threads[qid] = t
 		t.start()
 		response.set_header('Content-Type', 'application/json')
-		return make_json("ok", {"query_id":qid})
+		return json.dumps({"query_id":qid})
 
 @get('/api/queries/<qid>')
 def get_query(qid):
@@ -73,7 +85,7 @@ def get_query(qid):
 		abort(404, "Query not found.")
 	else:
 		response.set_header('Content-Type', 'application/json')
-		return make_json('ok', get_query_status(qid)) # TODO: write get_query_status
+		return get_query_status(qid) # TODO: write get_query_status
 
 
 @delete('/api/queries/<qid>')
