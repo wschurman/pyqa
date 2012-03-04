@@ -54,7 +54,7 @@ class ScraperWorker(Thread):
 
 
 @task
-def crawl(url, maxdepth, start):
+def crawl(url, maxdepth):
 	global urls, visited
 	if maxdepth == 0: return -1
 	
