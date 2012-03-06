@@ -26,7 +26,7 @@ class QueryThread(Thread):
 	
 	def __init__(self, q, d, qid):
 		self.query = q
-		self.start_url = "http://www.google.com/search?q=" + q
+		self.start_url = "http://go.wschurman.com" #"http://www.google.com/search?q=" + q
 		self.max_depth = d
 		self.qid = qid
 		self.qstatus = "Waiting"
@@ -37,18 +37,19 @@ class QueryThread(Thread):
 	
 	def run(self):
 		self.qstatus = "Running"
-		self.crawl_async_result = crawl.delay(self.start_url, self.max_depth)
+		self.crawl_async_result = crawl.apply_async(args=[self.start_url, self.max_depth, "keyword"], serializer="json")
 		while not self.crawl_async_result.ready():
 			time.sleep(0)
-		self.crawlstatus = "Done"
-		self.parse_async_result = parse.delay(self.crawl_async_result.result, "keyword")
-		while not self.parse_async_result.ready():
-			time.sleep(0)
-		self.parsestatus = "Done"
 		
-		insert_into_db(self.parse_async_result.result)
+		# self.crawl_async_result is a list of { URLs, links, htmls } to be parsed
+		
+		self.crawlstatus = "Done"
+		print "Crawl Done"
+		print self.crawl_async_result.result
+		
+		#self.__insert_into_db(self.parse_async_result.result)
 	
-	def insert_into_db(self, data):
+	def __insert_into_db(self, data):
 		global collection
 		self.dbkey = collection.insert(data)
 		self.qstatus = "Done"
@@ -91,7 +92,6 @@ def list_queries():
 def run_query():
 	global qid_lock, qid_counter	
 	r = request.json
-	print r
 	if not r or not r["query"] or not r["depth"]:
 		abort(400, "Invalid call, bad request.")
 	else:

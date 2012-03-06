@@ -1,17 +1,21 @@
 from celery.task import task
 
-from scraper import ScrapeData
 from parser import KeywordExtracter, SourceCiter
 
+# crawldata is in form {"url": url, "links": final_links, "html":str(html)}
+
 @task
-def parse(scrapedata, p):
+def parse(crawldata, p):
+	
+	return_data = crawldata
 	
 	if p == "keyword":
-		parser_module = KeywordExtracter(scrapedata)
+		parser_module = KeywordExtracter(crawldata)
 	elif p == "citer":
-		parser_module = SourceCiter(scrapedata)
+		parser_module = SourceCiter(crawldata)
 	else:
 		raise Exception("Parser unknown")
 	
 	parser_module.parse()
-	return parser_module.get_results()
+	return_data["parse_results"] = parser_module.get_parsed_data()
+	return return_data

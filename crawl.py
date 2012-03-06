@@ -1,75 +1,99 @@
 # Requires: celery, mechanize, beautifulsoup, lxml
 from celery.task import task
+from celery.task.sets import subtask
 from threading import Thread, Lock
 from Queue import Queue, Empty
 import re
 import mechanize
-from scraper import ScrapeData
-
-num_workers = 4
+import os, time
+from parse import parse
 
 visited = set()
-urls = Queue()
-
-r_lock = Lock()
-results = []
-			
+valids = []
 
 class ScraperWorker(Thread):
 	
-	def __init__(self, timeout):
-		self.scrape_data = None
-		self.initial_timeout = timeout
-		self.timeout = timeout
+	def __init__(self, url, depth, parser):
+		self.url = url
+		self.depth = depth
+		self.parser = parser
 		Thread.__init__(self)
 		
 	def run(self):
-		global urls, visited, r_lock
+		global visited, valids
 		
-		br = mechanize.Browser()
+		subworkers = []
 		
-		try:
-			while True:
-				self.scrape_data = urls.get(False, self.timeout)		
-				if self.scrape_data.get_depth() < 0: continue
-				try:
-					response = br.open(self.scrape_data.get_url())
-					
-					for link in br.links():
-						furl = link.url if "http://" in link.url else link.base_url + link.url
-						if furl not in visited:
-							urls.put(ScrapeData(furl, self.scrape_data.get_depth() - 1))
-							visited.add(furl)
-					
-					html = response.read()
-					self.scrape_data.set_content(str(html))
-					with r_lock:
-						results.append(self.scrape_data.get_content())
-						self.scrape_data = None
-				except Exception as e:
-					print e, self.scrape_data.get_url()
-					self.scrape_data = None
-		except Empty:
-			pass
+		self.async_result = get_content.apply_async(args=[self.url, parse.subtask((self.parser, ))], serializer="json")
+		
+		# get first result to extract links
+		while not self.async_result.ready():
+			time.sleep(0)
+		
+		# no first result, die
+		if not self.async_result.successful() or self.async_result.result == None:
+			return
+		
+		# add visited url
+		result = self.async_result.result
+		visited.add(self.url)
+		
+		# if need to, create workers for found links
+		if self.depth > 0:
+			tovisit = result["links"]
+			tovisit = set(tovisit).difference(visited)
+		
+			for url in tovisit:
+				w = ScraperWorker(url, self.depth - 1, self.parser)
+				w.start()
+				subworkers.append(w)
+		
+		# get the parse subtask
+		subtask = result["subtask"]
+		while not subtask.ready():
+			time.sleep(0)
+		
+		# could not parse, no need to add it to overall result
+		if not subtask.successful() or subtask.result == None:
+			return
+		
+		subresult = subtask.result # dict of k, v parsed and original crawl data
+		valids.append(subresult)
+		
+		# join all sub link workers
+		for worker in subworkers:
+			worker.join()
 
 
 @task
-def crawl(url, maxdepth):
-	global urls, visited
+def crawl(url, maxdepth, parser):
+	global visited, valids
 	if maxdepth == 0: return -1
 	
-	urls.put(ScrapeData(url, maxdepth))
 	visited.add(url)
 	
-	workers = []
-	for i in range(0, num_workers):
-		r = ScraperWorker(2)
-		r.start()
-		workers.append(r)
+	r = ScraperWorker(url, maxdepth, parser)
+	r.start()
+	r.join()
 	
-	for worker in workers:
-		worker.join()
-	
-	return results
-	
-#crawl("http://stackoverflow.com/questions/4744426/python-threading-with-global-variables", 1, 0)
+	return valids
+
+@task
+def get_content(url, callback=None):
+	br = mechanize.Browser()
+	try:
+		response = br.open(url)
+		final_links = []
+		for link in br.links():
+			furl = link.url if "http://" in link.url else link.base_url + link.url #TODO: fix
+			final_links.append(furl)
+		html = response.read()
+		ret = {"links":final_links}
+		resp = {"url": url, "links": final_links, "html":str(html)}
+		if callback is not None:
+			ret["subtask"] = subtask(callback).apply_async(args=[resp], serializer="json")
+		return ret # opened successfully
+	except Exception as e:
+		print e, url
+		return None
+		
