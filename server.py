@@ -144,4 +144,4 @@ def error501(error):
 def error404(error):
     return 'Unknown API method'
 
-run(host='localhost', port=1337)
+run(host='0.0.0.0', port=1337)
