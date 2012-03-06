@@ -4,7 +4,7 @@ from parse import parse
 import json
 import time
 import pymongo
-import psutil, os
+import psutil, os, time
 from threading import Thread, Lock
 from bottle import route, run, request, abort, get, post, delete, error, response
 
@@ -63,14 +63,14 @@ class QueryThread(Thread):
 # if running, return some sort of status data
 # if done, return info necessary to query data from mongoDB
 def get_query_status(qid):
-	return json.dumps(query_threads[qid].get_status())
+	return query_threads[qid].get_status()
 
 @get('/api/status')
-def apistatus():
+def api_status():
 	#global connection
 	status = True
 	#status &= connection.server_info()
-	return "ok"
+	return {'status':'online', 'servertime':time.time()}
 
 @get('/api/hello')
 def hello():
@@ -82,9 +82,9 @@ def list_queries():
 		abort(204, "No Queries.")
 	retdict = dict()
 	for k, v in query_threads.iteritems():
-		retdict[k] = v.get_query
+		retdict[k] = v.get_query()
 	response.set_header('Content-Type', 'application/json')
-	return json.dumps(retdict)
+	return retdict
 
 # call with a query and depth json field in the post body, e.g. {"query":"hello", "depth":4}
 @post('/api/queries')
@@ -101,9 +101,9 @@ def run_query():
 		t = QueryThread(r["query"], r["depth"], qid)
 		query_threads[qid] = t
 		t.start()
-		response.status_code = 201
+		response.status = "201 Made Query"
 		response.set_header('Content-Type', 'application/json')
-		return json.dumps({"query_id":qid})
+		return {"query_id":qid}
 
 @get('/api/queries/<qid>')
 def get_query(qid):
@@ -126,12 +126,12 @@ def delete_query(qid):
 def get_server_stats():
 	p = psutil.Process(os.getpid())
 	response.set_header('Content-Type', 'application/json')
-	return json.dumps({
+	return {
 		"num_threads":p.get_num_threads(),
 		"cpu_percent":p.get_cpu_percent(interval=0),
 		"memory":p.get_memory_info(),
 		"connections":p.get_connections(kind='all')
-	})
+	}
 
 # The following method is a catchall method
 
@@ -141,6 +141,6 @@ def error501(error):
 
 @error(404)
 def error404(error):
-    return 'Unknown API method'
+    return 'Query or Method Not Found'
 
 run(host='0.0.0.0', port=1337)

@@ -1,7 +1,9 @@
+from celery.task import task
+
 from scraper import ScrapeData
 from parser import KeywordExtracter, SourceCiter
 
-#@task
+@task
 def parse(scrapedata, p):
 	
 	if p == "keyword":
