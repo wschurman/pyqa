@@ -10,7 +10,7 @@ ToDo
 * Implement a research paper writer on top of the crawler QA system
 * Create a monitoring API in node.js that runs on each worker and provides a TCP endpoint API for requesting status data, memory, cpu, etc...
 * Make QA python program listen for HTTP requests to begin processing, provide API to see progress, get data so far, kill, etc...
-  Add a crawl queue to the program.
+  The crawl queue is built into celery.
 * Create a frontend in node.js that calls the HTTP endpoint to begin a crawl and then calls multiple APIs to show live data.
   This will be constantly running and will show all live status of current crawl and waiting crawls and provide JS API for web app.
 

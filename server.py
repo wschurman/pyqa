@@ -10,7 +10,11 @@ from bottle import route, run, request, abort, get, post, delete, error, respons
 
 from pymongo import Connection
 
-connection = Connection('ec2-184-73-79-244.compute-1.amazonaws.com', 27017)
+try:
+	connection = Connection('localhost', 27017)
+except Exception:
+	connection = Connection('ec2-184-73-79-244.compute-1.amazonaws.com', 27017)
+
 db = connection.query_db
 collection = db.query_collection
 
