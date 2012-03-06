@@ -95,7 +95,6 @@ def run_query():
 	if not r or not r["query"] or not r["depth"]:
 		abort(400, "Invalid call, bad request.")
 	else:
-		return "started monitor thread"
 		with qid_lock:
 			qid_counter += 1
 			qid = qid_counter
