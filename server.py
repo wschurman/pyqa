@@ -98,7 +98,7 @@ def run_query():
 		with qid_lock:
 			qid_counter += 1
 			qid = qid_counter
-		t = QueryThread(r.query, r.depth, qid)
+		t = QueryThread(r["query"], r["depth"], qid)
 		query_threads[qid] = t
 		t.start()
 		response.status_code = 201
