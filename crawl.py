@@ -7,9 +7,10 @@ import re
 import mechanize
 import os, time
 from parse import parse
+from urlparse import urljoin
 
 visited = set()
-valids = []
+valids = dict()
 
 class ScraperWorker(Thread):
 	
@@ -34,18 +35,18 @@ class ScraperWorker(Thread):
 		if not self.async_result.successful() or self.async_result.result == None:
 			return
 		
-		print self.url, "Got first result"
+		# print self.url, "Got first result"
 		# add visited url
 		result = self.async_result.result
 		visited.add(self.url)
 		
 		# if need to, create workers for found links
 		if self.depth > 0:
-			tovisit = result["links"]
-			tovisit = set(tovisit).difference(visited)
+			tovisit = set(result["links"])
+			tovisit.difference_update(visited)
 		
 			for url in tovisit:
-				print "Adding worker for ", url
+				# print "Adding worker for ", url
 				w = ScraperWorker(url, self.depth - 1, self.parser)
 				w.start()
 				subworkers.append(w)
@@ -59,15 +60,15 @@ class ScraperWorker(Thread):
 		if not subtask.successful() or subtask.result == None:
 			return
 		
-		print self.url, "Got parse subtask and append"
+		# print self.url, "Got parse subtask and append"
 		subresult = subtask.result # dict of k, v parsed and original crawl data
-		valids.append(subresult)
+		valids[self.url] = subresult
 		
 		# join all sub link workers
 		for worker in subworkers:
 			worker.join()
 		
-		print self.url, "Joined all subworkers"
+		# print self.url, "Joined all subworkers"
 
 
 @task
@@ -89,7 +90,7 @@ def get_content(url, callback=None):
 	response = br.open(url)
 	final_links = []
 	for link in br.links():
-		furl = link.url if "http://" in link.url else link.base_url + link.url #TODO: fix
+		furl = urljoin(url, link.url) #TODO: fix
 		final_links.append(furl)
 	html = response.read()
 	ret = {"links":final_links}

@@ -2,7 +2,6 @@ from crawl import crawl
 from parse import parse
 
 import json
-import time
 import pymongo
 import psutil, os, time
 from threading import Thread, Lock
@@ -43,10 +42,10 @@ class QueryThread(Thread):
 		# self.crawl_async_result is a list of { URLs, links, htmls } to be parsed
 		
 		self.crawlstatus = "Done"
-		print "Crawl Done"
+		# print "Crawl Done"
 		print json.dumps(self.crawl_async_result.result, indent=4)
 		
-		#self.__insert_into_db(self.parse_async_result.result)
+		self.__insert_into_db(self.crawl_async_result.result)
 	
 	def __insert_into_db(self, data):
 		global collection
@@ -57,7 +56,7 @@ class QueryThread(Thread):
 		return self.query
 	
 	def get_status(self):
-		return {"status":self.qstatus, "crawlstatus":self.crawlstatus, "dbkey":self.dbkey}
+		return {"status":self.qstatus, "crawlstatus":self.crawlstatus, "dbkey":str(self.dbkey)}
 
 # return either waiting, running, or done
 # if running, return some sort of status data
@@ -70,7 +69,11 @@ def api_status():
 	#global connection
 	status = True
 	#status &= connection.server_info()
-	return {'status':'online', 'servertime':time.time()}
+	response.set_header('Content-Type', 'application/json')
+	return {
+		'status':'online',
+		'servertime':time.time(),
+	}
 
 @get('/api/hello')
 def hello():
@@ -126,10 +129,18 @@ def get_server_stats():
 	p = psutil.Process(os.getpid())
 	response.set_header('Content-Type', 'application/json')
 	return {
+		'status':'online',
+		'servertime':time.time(),
 		"num_threads":p.get_num_threads(),
 		"cpu_percent":p.get_cpu_percent(interval=0),
 		"memory":p.get_memory_info(),
-		"connections":p.get_connections(kind='all')
+		"connections":p.get_connections(kind='all'),
+		'mongodb': {
+			'host': connection.host,
+			'port': connection.port,
+			'db': db.name,
+			'collection_name': collection.name
+		}
 	}
 
 # The following method is a catchall method
