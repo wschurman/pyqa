@@ -8,11 +8,13 @@ class KeywordExtracter(Parser):
 			print "Must init data in parser"
 		
 		b = BeautifulSoup(self.data["html"])
+		print "Data Title: ", b.title
 		
 		keywords = []
 		
 		#keywords.extend(b.find('meta', { "name" : "keywords"}))
-		keywords.append(b.title.get_text())
+		if b.title:
+			keywords.append(b.title.get_text())
 		
 		self.set_parsed_data(keywords)
 		

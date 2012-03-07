@@ -26,12 +26,11 @@ class QueryThread(Thread):
 	
 	def __init__(self, q, d, qid):
 		self.query = q
-		self.start_url = "http://go.wschurman.com" #"http://www.google.com/search?q=" + q
+		self.start_url = q
 		self.max_depth = d
 		self.qid = qid
 		self.qstatus = "Waiting"
 		self.crawlstatus = None
-		self.parsestatus = None
 		self.dbkey = None
 		Thread.__init__(self)
 	
@@ -45,7 +44,7 @@ class QueryThread(Thread):
 		
 		self.crawlstatus = "Done"
 		print "Crawl Done"
-		print self.crawl_async_result.result
+		print json.dumps(self.crawl_async_result.result, indent=4)
 		
 		#self.__insert_into_db(self.parse_async_result.result)
 	
@@ -58,7 +57,7 @@ class QueryThread(Thread):
 		return self.query
 	
 	def get_status(self):
-		return {"status":self.qstatus, "crawlstatus":self.crawlstatus, "parsestatus":self.parsestatus, "dbkey":self.dbkey}
+		return {"status":self.qstatus, "crawlstatus":self.crawlstatus, "dbkey":self.dbkey}
 
 # return either waiting, running, or done
 # if running, return some sort of status data
@@ -92,7 +91,7 @@ def list_queries():
 def run_query():
 	global qid_lock, qid_counter	
 	r = request.json
-	if not r or not r["query"] or not r["depth"]:
+	if not r or not r["query"] or not r["depth"] and not r["depth"] == 0:
 		abort(400, "Invalid call, bad request.")
 	else:
 		with qid_lock:
@@ -105,16 +104,16 @@ def run_query():
 		response.set_header('Content-Type', 'application/json')
 		return {"query_id":qid}
 
-@get('/api/queries/<qid>')
+@get('/api/queries/<qid:int>')
 def get_query(qid):
-	if not qid in query_threads:
+	if qid not in query_threads:
 		abort(404, "Query not found.")
 	else:
 		response.set_header('Content-Type', 'application/json')
 		return get_query_status(qid)
 
 
-@delete('/api/queries/<qid>')
+@delete('/api/queries/<qid:int>')
 def delete_query(qid):
 	if not qid in query_threads:
 		abort(404, "Query not found.")

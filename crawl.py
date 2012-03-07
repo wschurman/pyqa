@@ -24,7 +24,7 @@ class ScraperWorker(Thread):
 		
 		subworkers = []
 		
-		self.async_result = get_content.apply_async(args=[self.url, parse.subtask((self.parser, ))], serializer="json")
+		self.async_result = get_content.apply_async(args=[self.url, parse.subtask((self.parser, ))], serializer="json", expires=10)
 		
 		# get first result to extract links
 		while not self.async_result.ready():
@@ -34,6 +34,7 @@ class ScraperWorker(Thread):
 		if not self.async_result.successful() or self.async_result.result == None:
 			return
 		
+		print self.url, "Got first result"
 		# add visited url
 		result = self.async_result.result
 		visited.add(self.url)
@@ -44,6 +45,7 @@ class ScraperWorker(Thread):
 			tovisit = set(tovisit).difference(visited)
 		
 			for url in tovisit:
+				print "Adding worker for ", url
 				w = ScraperWorker(url, self.depth - 1, self.parser)
 				w.start()
 				subworkers.append(w)
@@ -57,18 +59,21 @@ class ScraperWorker(Thread):
 		if not subtask.successful() or subtask.result == None:
 			return
 		
+		print self.url, "Got parse subtask and append"
 		subresult = subtask.result # dict of k, v parsed and original crawl data
 		valids.append(subresult)
 		
 		# join all sub link workers
 		for worker in subworkers:
 			worker.join()
+		
+		print self.url, "Joined all subworkers"
 
 
 @task
 def crawl(url, maxdepth, parser):
 	global visited, valids
-	if maxdepth == 0: return -1
+	if maxdepth < 0: return -1
 	
 	visited.add(url)
 	
@@ -81,19 +86,15 @@ def crawl(url, maxdepth, parser):
 @task
 def get_content(url, callback=None):
 	br = mechanize.Browser()
-	try:
-		response = br.open(url)
-		final_links = []
-		for link in br.links():
-			furl = link.url if "http://" in link.url else link.base_url + link.url #TODO: fix
-			final_links.append(furl)
-		html = response.read()
-		ret = {"links":final_links}
-		resp = {"url": url, "links": final_links, "html":str(html)}
-		if callback is not None:
-			ret["subtask"] = subtask(callback).apply_async(args=[resp], serializer="json")
-		return ret # opened successfully
-	except Exception as e:
-		print e, url
-		return None
+	response = br.open(url)
+	final_links = []
+	for link in br.links():
+		furl = link.url if "http://" in link.url else link.base_url + link.url #TODO: fix
+		final_links.append(furl)
+	html = response.read()
+	ret = {"links":final_links}
+	resp = {"url": url, "links": final_links, "html":str(html)}
+	if callback is not None:
+		ret["subtask"] = subtask(callback).apply_async(args=[resp], serializer="json", expires=5)
+	return ret # opened successfully
 		
