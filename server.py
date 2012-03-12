@@ -3,6 +3,7 @@ from parse import parse
 
 import json
 import pymongo
+from bson import objectid
 import psutil, os, time
 from threading import Thread, Lock
 from bottle import route, run, request, abort, get, post, delete, error, response
@@ -49,7 +50,7 @@ class QueryThread(Thread):
 	
 	def __insert_into_db(self, data):
 		global collection
-		self.dbkey = collection.insert(data)
+		self.dbkey = collection.insert({"data":data})
 		self.qstatus = "Done"
 	
 	def get_query(self):
@@ -115,6 +116,12 @@ def get_query(qid):
 		response.set_header('Content-Type', 'application/json')
 		return get_query_status(qid)
 
+@get('/api/data/<key>')
+def get_data(key):
+	response.set_header('Content-Type', 'application/json')
+	oid = objectid.ObjectId(key)
+	res = collection.find_one({"_id":oid})
+	return json.dumps(res['data'])
 
 @delete('/api/queries/<qid:int>')
 def delete_query(qid):

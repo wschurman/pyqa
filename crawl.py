@@ -10,7 +10,7 @@ from parse import parse
 from urlparse import urljoin
 
 visited = set()
-valids = dict()
+valids = []
 
 class ScraperWorker(Thread):
 	
@@ -62,7 +62,7 @@ class ScraperWorker(Thread):
 		
 		# print self.url, "Got parse subtask and append"
 		subresult = subtask.result # dict of k, v parsed and original crawl data
-		valids[self.url] = subresult
+		valids.append(subresult)
 		
 		# join all sub link workers
 		for worker in subworkers:
