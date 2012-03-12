@@ -1,0 +1,27 @@
+doctype 5
+html(lang="en")
+  head
+    title PyQA | #{title}
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    link(rel='stylesheet', href='/css/bootstrap.min.css')
+    link(rel='stylesheet', href='/css/style.css')
+    script(type='text/javascript', src='/socket.io/socket.io.js')
+    script(type='text/javascript', src='https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js')
+    script(type='text/javascript', src='/js/bootstrap.js')
+  body
+    header.navbar.navbar-fixed-top
+      .navbar-inner
+        .container
+          a(href='/').brand PyQA
+          a.btn.btn-navbar(data-toggle='collapse',data-target='.nav-collapse')
+            span.icon-bar
+            span.icon-bar
+            span.icon-bar
+          .nav-collapse
+            ul.nav
+              li
+                a(href='/docs') API Documentation
+              li
+                a(href='/about') About
+    section#main
+      .container!=body
