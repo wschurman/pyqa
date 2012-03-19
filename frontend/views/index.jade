@@ -1,2 +1,30 @@
+script(type='text/javascript', src='/js/smoothie.js')
+script(type='text/javascript', src='/js/dashboard.js')
 h1= title
-p Welcome to #{title}
+
+section#req-form
+  form.form-horizontal
+    fieldset
+      legend PyQA Crawl Request
+      .control-group
+        label(for="url").control-label Crawl Start URL
+        .controls
+          input(type="text").input-xlarge#url
+      .control-group
+        label(for="depth").control-label Crawl Depth
+        .controls
+          input(type="text").input-min.span1#depth
+      .form-actions
+        input(type="submit").btn.btn-primary Crawl
+
+section#montors
+  .well
+    h3 Server CPU Usage
+    canvas(width="400", height="100")#cpucanvas &nbsp;
+    .row
+      .span2
+        p Red = System
+      .span2
+        p Blue = Idle
+      .span2
+        p Green = User

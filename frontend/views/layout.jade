@@ -5,9 +5,10 @@ html(lang="en")
     meta(name="viewport", content="width=device-width, initial-scale=1.0")
     link(rel='stylesheet', href='/css/bootstrap.min.css')
     link(rel='stylesheet', href='/css/style.css')
-    script(type='text/javascript', src='/socket.io/socket.io.js')
     script(type='text/javascript', src='https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js')
+    script(type='text/javascript', src='/socket.io/socket.io.js')
     script(type='text/javascript', src='/js/bootstrap.js')
+    script(type='text/javascript', src='/nowjs/now.js')
   body
     header.navbar.navbar-fixed-top
       .navbar-inner
@@ -23,5 +24,4 @@ html(lang="en")
                 a(href='/docs') API Documentation
               li
                 a(href='/about') About
-    section#main
-      .container!=body
+    .container!=body

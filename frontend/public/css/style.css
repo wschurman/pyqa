@@ -2,19 +2,24 @@ body {
 	padding-top: 90px;
 }
 
+section {
+	padding-top: 60px;
+	float: left;
+	clear: left;
+	width: 100%;
+}
+
 @media (max-width: 480px) {
   body {
     padding-top: 70px;
   }
 }
 
-
 @media (max-width: 768px) {
   body {
     padding-top: 0;
   }
 }
-
 
 @media (min-width: 480px) and (max-width: 768px) {
 	

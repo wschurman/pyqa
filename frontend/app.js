@@ -4,19 +4,15 @@
  */
 
 var express = require('express')
-  , routes = require('./routes');
+  , routes = require('./routes')
+	, nowjs = require('now')
+	, spawn = require('child_process').spawn;
 var port = process.env.PORT || 3000;
 
-var app = module.exports = express.createServer()
-   , io = require('socket.io').listen(app);
+var app = module.exports = express.createServer();
+var everyone = nowjs.initialize(app);
 
 // Configuration
-
-io.configure(function () {
-  io.set("transports", ["xhr-polling"]);
-  io.set("polling duration", 10);
-  io.set("log level", 1);
-});
 
 app.configure(function(){
   app.set('views', __dirname + '/views');
@@ -40,6 +36,46 @@ app.configure('production', function(){
 app.get('/', routes.index);
 app.get('/docs', routes.docs);
 app.get('/about', routes.about);
+
+// Now.js
+
+everyone.now.sendCrawlRequest = function(req) {
+	// send out api call to pyqa server
+};
+
+everyone.now.sendDeleteRequest = function(req) {
+	// send out api delete call
+};
+
+// CPU Usage with now.js
+
+String.prototype.trim = function() {
+	return this.replace(/^\s+|\s+$/g,"");
+}
+
+var output = function(output_data) {
+	var output_array = output_data.toString().trim().split(/\s+/);
+	for (var i=0; i < output_array.length; i++) {
+		output_array[i] = parseFloat( output_array[i]);
+	};
+	output_hash = {
+		date:new Date(),
+		cpu:{
+			us:output_array[3],
+			sy:output_array[4],
+			id:output_array[5]
+		}
+	};
+	
+	try {
+		everyone.now.receiveMonitorUpdate(output_hash);
+	} catch(e) {
+		
+	}
+};
+
+var iostat = spawn('iostat', ["-w 1"]);
+iostat.stdout.on('data', output);
 
 app.listen(port);
 console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
