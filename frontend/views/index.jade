@@ -3,7 +3,7 @@ script(type='text/javascript', src='/js/dashboard.js')
 h1= title
 
 section#req-form
-  form.form-horizontal
+  form.form-horizontal#reqform
     fieldset
       legend PyQA Crawl Request
       .control-group
@@ -13,7 +13,7 @@ section#req-form
       .control-group
         label(for="depth").control-label Crawl Depth
         .controls
-          input(type="text").input-min.span1#depth
+          input(type="text", value="1").input-min.span1#depth
       .form-actions
         input(type="submit").btn.btn-primary Crawl
 

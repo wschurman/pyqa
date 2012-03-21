@@ -13,6 +13,7 @@ ToDo
   The crawl queue is built into celery.
 * Create a frontend in node.js that calls the HTTP endpoint to begin a crawl and then calls multiple APIs to show live data.
   This will be constantly running and will show all live status of current crawl and waiting crawls and provide JS API for web app.
+* Start python api server from node
 
 Contributors
 =============
