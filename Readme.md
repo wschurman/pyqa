@@ -14,6 +14,7 @@ ToDo
 * Create a frontend in node.js that calls the HTTP endpoint to begin a crawl and then calls multiple APIs to show live data.
   This will be constantly running and will show all live status of current crawl and waiting crawls and provide JS API for web app.
 * Start python api server from node
+* Persist all queries ever performed, i.e. make all queries searchable, and use as cache.
 
 Contributors
 =============
