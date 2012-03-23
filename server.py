@@ -31,7 +31,7 @@ try:
    connection = Connection(cf("LOCAL"), 27017)
 except Exception:
    try:
-      connection = Connection(cf("EC"), 27017)
+      connection = Connection(cf("EC2"), 27017)
    except Exception:
       print "No MongoDB connection available. Exiting."
       sys.exit(1)
@@ -42,7 +42,7 @@ collection = db.query_collection
 # Connect to RabbitMQ
 mqcredentials = pika.PlainCredentials(cf("MQUSER"), cf("MQPASS"))
 mqconnection = pika.BlockingConnection(pika.ConnectionParameters(
-        host=cf("EC"), port=cf("MQPORT"), virtual_host=cf("MQVHOST"), credentials=mqcredentials))
+        host=cf("EC2"), port=cf("MQPORT"), virtual_host=cf("MQVHOST"), credentials=mqcredentials))
 mqchannel = mqconnection.channel()
 mqchannel.queue_declare(queue=cf("MQQUEUE"), durable=True)
 
@@ -233,7 +233,7 @@ def error501(error):
 def error404(error):
     return 'Query or Method Not Found'
 
-run(host='0.0.0.0', port=cf("API_PORT"))
+run(host=cf("API_HOST"), port=cf("API_PORT"))
 
 @atexit.register
 def goodbye():

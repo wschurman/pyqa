@@ -8,12 +8,17 @@ var express = require('express')
 , nowjs = require('now')
 , api = require('request')
 , spawn = require('child_process').spawn;
-var port = process.env.PORT || 3000;
 
-var app = module.exports = express.createServer();
-var everyone = nowjs.initialize(app);
+// Load global config
+var config = require('../pyqaconfig.json');
+var apiuri = function(method) {
+   return "http://"+config.LOCAL+":"+config.API_PORT+"/api/"+method;
+}
 
 // Configuration
+var port = process.env.PORT || config.FRONTEND_PORT;
+var app = module.exports = express.createServer();
+var everyone = nowjs.initialize(app);
 
 app.configure(function(){
    app.set('views', __dirname + '/views');
@@ -44,7 +49,7 @@ everyone.now.sendCrawlRequest = function(req) {
    var me = this;
    // send out api call to pyqa api server
    var opts = {
-      url: "http://localhost:1337/api/queries",
+      url: apiuri("queries"),
       json: req
    };
 
