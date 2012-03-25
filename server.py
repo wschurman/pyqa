@@ -44,7 +44,7 @@ mqcredentials = pika.PlainCredentials(cf("MQUSER"), cf("MQPASS"))
 mqconnection = pika.BlockingConnection(pika.ConnectionParameters(
         host=cf("EC2"), port=cf("MQPORT"), virtual_host=cf("MQVHOST"), credentials=mqcredentials))
 mqchannel = mqconnection.channel()
-mqchannel.queue_declare(queue=cf("MQQUEUE"), durable=True)
+mqchannel.exchange_declare(exchange=cf("MQEXCHANGE"), type='fanout')
 
 # Global datastructures for keeping track of queries
 query_threads = dict()
@@ -86,9 +86,12 @@ class QueryThread(Thread):
       self.__insert_into_db(self.crawl_async_result.result)
    
    def __insert_into_db(self, data):
-      global collection
+      global collection, mqchannel
       self.dbkey = collection.insert({"data":data})
       self.qstatus = "Done"
+      mqchannel.basic_publish(exchange=cf("MQEXCHANGE"),
+                            routing_key='',
+                            body="{'msg':'Done with crawl'}")
    
    def get_query(self):
       return self.query

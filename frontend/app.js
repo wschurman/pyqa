@@ -7,6 +7,7 @@ var express = require('express')
 , routes = require('./routes')
 , nowjs = require('now')
 , api = require('request')
+, amqp = require('amqp')
 , spawn = require('child_process').spawn;
 
 // Load global config
@@ -15,11 +16,29 @@ var apiuri = function(method) {
    return "http://"+config.LOCAL+":"+config.API_PORT+"/api/"+method;
 }
 
-// Configuration
+// Start express, now
 var port = process.env.PORT || config.FRONTEND_PORT;
 var app = module.exports = express.createServer();
 var everyone = nowjs.initialize(app);
 
+// Start RabbitMQ
+var mqconnection = amqp.createConnection({
+   host: config.EC2,
+   port: config.MQPORT,
+   login: config.MQUSER,
+   password: config.MQPASS,
+   vhost: config.MQVHOST
+});
+mqconnection.on('ready', function() {
+   var q = mqconnection.queue(config.MQQUEUE, {durable:true, autoDelete:false});
+   q.bind(config.MQEXCHANGE);
+   console.log('mqready');
+   q.subscribe(function (message) {
+      console.log(message);
+   });
+});
+
+// Configuration
 app.configure(function(){
    app.set('views', __dirname + '/views');
    app.set('view engine', 'jade');

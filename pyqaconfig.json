@@ -5,8 +5,9 @@
 	"FRONTEND_PORT" : 3000,
 	"EC2" : "ec2-184-73-79-244.compute-1.amazonaws.com",
 	"MQPORT" : 5672,
-	"MQVHOST" : "celeryv",
-	"MQUSER" : "celery",
+	"MQVHOST" : "/",
+	"MQUSER" : "crawl_user",
 	"MQPASS" : "9PxyWcTUNDr6UZB6qcU",
-	"MQQUEUE" : "status_queue"
+	"MQEXCHANGE" : "crawl_status",
+	"MQQUEUE" : "crawl_queue"
 }
