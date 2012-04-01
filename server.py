@@ -44,13 +44,12 @@ mqcredentials = pika.PlainCredentials(cf("MQUSER"), cf("MQPASS"))
 mqconnection = pika.BlockingConnection(pika.ConnectionParameters(
         host=cf("EC2"), port=cf("MQPORT"), virtual_host=cf("MQVHOST"), credentials=mqcredentials))
 mqchannel = mqconnection.channel()
-mqchannel.exchange_declare(exchange=cf("MQEXCHANGE"), type='fanout')
+mqchannel.exchange_declare(exchange=cf("MQEXCHANGE"), type='fanout', durable=True, auto_delete=False)
 
 # Global datastructures for keeping track of queries
 query_threads = dict()
 qid_counter = 0
 qid_lock = Lock()
-
 
 class QueryThread(Thread):
    """
@@ -72,6 +71,7 @@ class QueryThread(Thread):
       Dispatches all async celery crawl/parse requests and waits for result.
       Inserts result into mongodb.
       """
+      global mqchannel
       self.qstatus = "Running"
       self.crawl_async_result = crawl.apply_async(args=[self.start_url, self.max_depth, "keyword"], serializer="json")
       while not self.crawl_async_result.ready():
@@ -84,14 +84,14 @@ class QueryThread(Thread):
       print json.dumps(self.crawl_async_result.result, indent=4)
       
       self.__insert_into_db(self.crawl_async_result.result)
+      content = json.dumps({"query":self.qid, "message":"done", "dbkey":self.dbkey});
+      mqchannel.basic_publish(exchange=cf("MQEXCHANGE"), routing_key='', body=content)
+      
    
    def __insert_into_db(self, data):
       global collection, mqchannel
       self.dbkey = collection.insert({"data":data})
       self.qstatus = "Done"
-      mqchannel.basic_publish(exchange=cf("MQEXCHANGE"),
-                            routing_key='',
-                            body="{'msg':'Done with crawl'}")
    
    def get_query(self):
       return self.query
@@ -160,7 +160,7 @@ def run_query():
       with qid_lock:
          qid_counter += 1
          qid = qid_counter
-      t = QueryThread(r["query"], r["depth"], qid)
+      t = QueryThread(r["query"], int(r["depth"]), qid)
       query_threads[qid] = t
       t.start()
       response.status = "201 Made Query"

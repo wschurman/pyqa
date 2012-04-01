@@ -29,14 +29,6 @@ var mqconnection = amqp.createConnection({
    password: config.MQPASS,
    vhost: config.MQVHOST
 });
-mqconnection.on('ready', function() {
-   var q = mqconnection.queue(config.MQQUEUE, {durable:true, autoDelete:false});
-   q.bind(config.MQEXCHANGE);
-   console.log('mqready');
-   q.subscribe(function (message) {
-      console.log(message);
-   });
-});
 
 // Configuration
 app.configure(function(){
@@ -114,6 +106,17 @@ var output = function(output_data) {
 
 var iostat = spawn('iostat', ["-w 1"]);
 iostat.stdout.on('data', output);
+
+mqconnection.on('ready', function() {
+   var q = mqconnection.queue(config.MQQUEUE, {durable:true, autoDelete:false});
+   q.bind(config.MQEXCHANGE);
+   console.log('mqready');
+   q.subscribe(function (message, headers, deliveryInfo) {
+      var p = JSON.parse(message.data.toString());
+      console.log(p);
+      everyone.now.receiveResults(p);
+   });
+});
 
 app.listen(port);
 console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);

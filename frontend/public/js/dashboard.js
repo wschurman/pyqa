@@ -21,6 +21,10 @@ $(document).ready(function(){
    now.receiveRequestResponse = function(resp) {
       console.log(resp);
    }
+   
+   now.receiveResults = function(res) {
+      console.log(res);
+   }
 
    $("#reqform").submit(function() {
       var url = $("#url").val();
