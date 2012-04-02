@@ -9,13 +9,15 @@ section#req-form
       .control-group
         label(for="url").control-label Crawl Start URL
         .controls
-          input(type="text").input-xlarge#url
+          input(type="text", value="http://localhost/pyqa/").input-xlarge#url
       .control-group
         label(for="depth").control-label Crawl Depth
         .controls
           input(type="text", value="1").input-min.span1#depth
       .form-actions
         input(type="submit").btn.btn-primary Crawl
+
+section#results
 
 section#montors
   .well

@@ -56,6 +56,8 @@ app.get('/about', routes.about);
 
 // Now.js
 
+var requests = {};
+
 everyone.now.sendCrawlRequest = function(req) {
    var me = this;
    // send out api call to pyqa api server
@@ -66,6 +68,7 @@ everyone.now.sendCrawlRequest = function(req) {
 
    api.post(opts, function(err, resp, body) {
    	if (!err && resp.statusCode == 201) {
+   	   requests[body.query_id] = me;
    	   me.now.receiveRequestResponse(body);
    	} else {
    	   me.now.receiveRequestResponse(err);
@@ -107,14 +110,28 @@ var output = function(output_data) {
 var iostat = spawn('iostat', ["-w 1"]);
 iostat.stdout.on('data', output);
 
+var deliverMessage = function(m) {
+   if (m.query_id) {
+      switch (m.message) {
+         case "done":
+            
+            break;
+         default:
+            requests[m.query_id].now.receiveResults(m);
+            break;
+      }
+   } else {
+      everyone.now.receiveMessage(m);
+   }
+}
+
 mqconnection.on('ready', function() {
    var q = mqconnection.queue(config.MQQUEUE, {durable:true, autoDelete:false});
    q.bind(config.MQEXCHANGE);
-   console.log('mqready');
    q.subscribe(function (message, headers, deliveryInfo) {
       var p = JSON.parse(message.data.toString());
       console.log(p);
-      everyone.now.receiveResults(p);
+      deliverMessage(p);
    });
 });
 

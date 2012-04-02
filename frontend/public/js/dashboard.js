@@ -24,6 +24,11 @@ $(document).ready(function(){
    
    now.receiveResults = function(res) {
       console.log(res);
+      $("#results").append("<div class='well'>"+res.toString()+"</div");
+   }
+   
+   now.receiveMessage = function(m) {
+      console.log(m);
    }
 
    $("#reqform").submit(function() {

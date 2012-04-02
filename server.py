@@ -84,7 +84,7 @@ class QueryThread(Thread):
       print json.dumps(self.crawl_async_result.result, indent=4)
       
       self.__insert_into_db(self.crawl_async_result.result)
-      content = json.dumps({"query":self.qid, "message":"done", "dbkey":self.dbkey});
+      content = json.dumps({"query_id":self.qid, "message":"done", "dbkey":str(self.dbkey)});
       mqchannel.basic_publish(exchange=cf("MQEXCHANGE"), routing_key='', body=content)
       
    
@@ -97,7 +97,7 @@ class QueryThread(Thread):
       return self.query
    
    def get_status(self):
-      return {"status":self.qstatus, "crawlstatus":self.crawlstatus, "dbkey":str(self.dbkey)}
+      return {"query_id":self.qid, "status":self.qstatus, "crawlstatus":self.crawlstatus, "dbkey":str(self.dbkey)}
 
 # return either waiting, running, or done
 # if running, return some sort of status data
