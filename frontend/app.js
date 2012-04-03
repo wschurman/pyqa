@@ -8,7 +8,8 @@ var express = require('express')
 , nowjs = require('now')
 , api = require('request')
 , amqp = require('amqp')
-, spawn = require('child_process').spawn;
+, spawn = require('child_process').spawn
+, mongo = require('mongoskin');
 
 // Load global config
 var config = require('../pyqaconfig.json');
@@ -20,6 +21,12 @@ var apiuri = function(method) {
 var port = process.env.PORT || config.FRONTEND_PORT;
 var app = module.exports = express.createServer();
 var everyone = nowjs.initialize(app);
+
+// Connect to MongoDB
+
+var ObjectID = mongo.ObjectID;
+var mdb = mongo.db(config.EC2+':27017/'+config.MONGO_DB);
+var collection = mdb.collection(config.MONGO_COLLECTION);
 
 // Start RabbitMQ
 var mqconnection = amqp.createConnection({
@@ -53,6 +60,16 @@ app.configure('production', function(){
 app.get('/', routes.index);
 app.get('/docs', routes.docs);
 app.get('/about', routes.about);
+app.get('/data/:id', function(req, res){
+   getData(req.params.id, function(dat) {
+      console.log(dat);
+      if (dat.err) {
+         res.send('huh?', 404);
+      } else {
+         res.render('data', { title: 'Data', d:dat.doc.data }) 
+      }
+   });
+});
 
 // Now.js
 
@@ -68,13 +85,26 @@ everyone.now.sendCrawlRequest = function(req) {
 
    api.post(opts, function(err, resp, body) {
    	if (!err && resp.statusCode == 201) {
-   	   requests[body.query_id] = me;
+   	   requests[body.query_id] = {
+   	      ev: me,
+   	      req: req
+   	   };
    	   me.now.receiveRequestResponse(body);
    	} else {
    	   me.now.receiveRequestResponse(err);
    	}
    });
 };
+
+getData = function(key, cb) {
+   // query mongo
+   collection.findOne({_id:new ObjectID(key)}, function(err, doc) {
+      cb({
+         err: err,
+         doc: doc
+      });
+   });
+}
 
 everyone.now.sendDeleteRequest = function(req) {
    // send out api delete call
@@ -88,22 +118,24 @@ String.prototype.trim = function() {
 
 var output = function(output_data) {
    var output_array = output_data.toString().trim().split(/\s+/);
+
    for (var i=0; i < output_array.length; i++) {
       output_array[i] = parseFloat( output_array[i]);
    };
+
    output_hash = {
       date:new Date(),
       cpu:{
-         us:output_array[3],
-         sy:output_array[4],
-         id:output_array[5]
+         us:output_array[9],
+         sy:output_array[10],
+         id:output_array[11]
       }
    };
 
    try {
       everyone.now.receiveMonitorUpdate(output_hash);
    } catch(e) {
-
+      console.log("Could not send cpu update");
    }
 };
 
@@ -112,14 +144,9 @@ iostat.stdout.on('data', output);
 
 var deliverMessage = function(m) {
    if (m.query_id) {
-      switch (m.message) {
-         case "done":
-            
-            break;
-         default:
-            requests[m.query_id].now.receiveResults(m);
-            break;
-      }
+      getData(m.dbkey, function(d) {
+         requests[m.query_id].ev.now.receiveResults(d.doc.data);
+      });
    } else {
       everyone.now.receiveMessage(m);
    }
@@ -137,3 +164,7 @@ mqconnection.on('ready', function() {
 
 app.listen(port);
 console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
+
+process.on('SIGTERM', function() {
+   iostat.kill();
+});

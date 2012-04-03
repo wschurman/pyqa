@@ -36,8 +36,8 @@ except Exception:
       print "No MongoDB connection available. Exiting."
       sys.exit(1)
 
-db = connection.query_db
-collection = db.query_collection
+db = connection[cf("MONGO_DB")]
+collection = db[cf("MONGO_COLLECTION")]
 
 # Connect to RabbitMQ
 mqcredentials = pika.PlainCredentials(cf("MQUSER"), cf("MQPASS"))

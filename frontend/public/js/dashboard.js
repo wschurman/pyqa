@@ -24,7 +24,7 @@ $(document).ready(function(){
    
    now.receiveResults = function(res) {
       console.log(res);
-      $("#results").append("<div class='well'>"+res.toString()+"</div");
+      $("#results").append("<div class='well'>"+JSON.stringify(res)+"</div>");
    }
    
    now.receiveMessage = function(m) {

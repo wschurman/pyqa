@@ -9,5 +9,7 @@
 	"MQUSER" : "crawl_user",
 	"MQPASS" : "9PxyWcTUNDr6UZB6qcU",
 	"MQEXCHANGE" : "crawl_status",
-	"MQQUEUE" : "crawl_queue"
+	"MQQUEUE" : "crawl_queue",
+	"MONGO_DB" : "query_db",
+	"MONGO_COLLECTION" : "query_collection"
 }
