@@ -1,6 +1,8 @@
 
 class Parser(object):
-	
+	"""
+	Parent class for any parser class.
+	"""
 	def __init__(self, data):
 		self.data = data
 		self.parsed = False

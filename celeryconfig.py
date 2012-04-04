@@ -10,4 +10,4 @@ CELERY_MONGODB_BACKEND_SETTINGS = {
     "taskmeta_collection": "my_taskmeta_collection",
 }
 
-CELERY_IMPORTS = ("crawl", "parse", "test")
+CELERY_IMPORTS = ("crawl", "parse")

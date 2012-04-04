@@ -2,7 +2,9 @@ from parser import Parser
 from bs4 import BeautifulSoup
 
 class KeywordExtracter(Parser):
-	
+	"""
+	Extracts the keywords from the html
+	"""
 	def parse(self):
 		if not self.data:
 			print "Must init data in parser"

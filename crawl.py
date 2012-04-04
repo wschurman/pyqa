@@ -13,7 +13,10 @@ visited = set()
 valids = []
 
 class ScraperWorker(Thread):
-	
+	"""
+	Thread to handle scraping of a url. Distributes link scraping and parsing as tasks and subtasks
+	to celery clients. Also creates child threads for each link found on url.
+	"""
 	def __init__(self, url, depth, parser):
 		self.url = url
 		self.depth = depth
@@ -21,9 +24,14 @@ class ScraperWorker(Thread):
 		Thread.__init__(self)
 		
 	def run(self):
+		"""
+		Dispatches crawl/parse async celery call, creates child threads.
+		"""
 		global visited, valids
 		
+		#child ScraperWorker threads
 		subworkers = []
+		
 		
 		self.async_result = get_content.apply_async(args=[self.url, parse.subtask((self.parser, ))], serializer="json", expires=10)
 		
@@ -51,7 +59,7 @@ class ScraperWorker(Thread):
 				w.start()
 				subworkers.append(w)
 		
-		# get the parse subtask
+		# get the parse subtask from this ScraperWorker's page
 		subtask = result["subtask"]
 		while not subtask.ready():
 			time.sleep(0)
@@ -73,6 +81,10 @@ class ScraperWorker(Thread):
 
 @task
 def crawl(url, maxdepth, parser):
+	"""
+	Creates a ScraperWorker for url, crawling at a depth of maxdepth,
+	and using parser as the parser
+	"""
 	global visited, valids
 	if maxdepth < 0: return -1
 	
@@ -86,8 +98,17 @@ def crawl(url, maxdepth, parser):
 
 @task
 def get_content(url, callback=None):
+	"""
+	Opens the url, scrapes the links, returns a dict of 
+	values as well as a parse subtask called on the results
+	"""
 	br = mechanize.Browser()
-	response = br.open(url)
+	br.set_handle_robots(False)
+	br.set_handle_referer(False)
+	try:
+		 response = br.open(url)
+	except:
+		 raise mechanize.URLError(url)
 	final_links = []
 	for link in br.links():
 		furl = urljoin(url, link.url) #TODO: fix

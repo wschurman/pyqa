@@ -1,15 +1,18 @@
-from celery.task import task
-from celery.task.sets import subtask
+import mechanize
+from urlparse import urljoin
 
-@task
-def add(x, y, callback=None):
-	result = x + y
-	if callback is not None:
-		return subtask(callback).delay(result)
-	return result
+url = "http://news.ycodededembinator.com/"
+
+br = mechanize.Browser()
+br.set_handle_robots(False)
+br.set_handle_referer(False)
+try:
+   response = br.open(url)
+except:
+   raise mechanize.URLError(url)
+
+for link in br.links():
+	furl = urljoin(url, link.url) #TODO: fix
+	print furl
 	
-	
-@task
-def f2():
-	print "Hello"
-	print "Returning from f2"
+# print response.read()

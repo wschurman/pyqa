@@ -6,7 +6,9 @@ from parser import KeywordExtracter, SourceCiter
 
 @task
 def parse(crawldata, p):
-	
+	"""
+	Parse celery task. Calls parse on specified parser and returns the results.
+	"""
 	return_data = crawldata
 	
 	if p == "keyword":
