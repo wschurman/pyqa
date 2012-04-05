@@ -60,6 +60,7 @@ app.configure('production', function(){
 app.get('/', routes.index);
 app.get('/docs', routes.docs);
 app.get('/about', routes.about);
+app.get('/query', routes.query);
 app.get('/data/:id', function(req, res){
    getData(req.params.id, function(dat) {
       console.log(dat);
@@ -98,6 +99,17 @@ everyone.now.sendCrawlRequest = function(req) {
 
 getData = function(key, cb) {
    // query mongo
+   
+   var id = null;
+   try {
+      id = new ObjectID(key);
+   } catch (e) {
+      cb({
+         err: "Invalid key"
+      });
+      return;
+   }
+   
    collection.findOne({_id:new ObjectID(key)}, function(err, doc) {
       cb({
          err: err,
@@ -135,7 +147,7 @@ var output = function(output_data) {
    try {
       everyone.now.receiveMonitorUpdate(output_hash);
    } catch(e) {
-      console.log("Could not send cpu update");
+      
    }
 };
 

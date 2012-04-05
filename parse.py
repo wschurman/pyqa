@@ -15,6 +15,8 @@ def parse(crawldata, p):
 		parser_module = KeywordExtracter(crawldata)
 	elif p == "citer":
 		parser_module = SourceCiter(crawldata)
+	elif p == "strip":
+	   parser_module = StripTags(crawldata)
 	else:
 		raise Exception("Parser unknown")
 	

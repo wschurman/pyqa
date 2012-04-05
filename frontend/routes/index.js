@@ -14,3 +14,7 @@ exports.about = function(req, res){
 exports.docs = function(req, res){
   res.render('docs', { title: 'Documentation' })
 };
+
+exports.query = function(req, res){
+   res.render('query', {title: 'Query'})
+}

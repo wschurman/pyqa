@@ -1,103 +1,19 @@
-from crawl import crawl
-from parse import parse
+import config
+from query import QueryThread
+from search import SearchThread
 
-import pika
 import atexit
-import json
-import pymongo
+import urllib2
 from bson import objectid
 import psutil, os, time, sys
 from threading import Thread, Lock
 from bottle import route, run, request, abort, get, post, delete, error, response
-from pymongo import Connection
 
-# load cross language config
-cfile = open('pyqaconfig.json')
-config = json.load(cfile)
-cfile.close()
-
-def cf(key):
-   """
-   Gets a config value, removes unicode if necessary.
-   """
-   if isinstance(config[key], int):
-      return config[key]
-   else:
-      return str(config[key])
-
-
-# Connect to MongoDB
-try:
-   connection = Connection(cf("LOCAL"), 27017)
-except Exception:
-   try:
-      connection = Connection(cf("EC2"), 27017)
-   except Exception:
-      print "No MongoDB connection available. Exiting."
-      sys.exit(1)
-
-db = connection[cf("MONGO_DB")]
-collection = db[cf("MONGO_COLLECTION")]
-
-# Connect to RabbitMQ
-mqcredentials = pika.PlainCredentials(cf("MQUSER"), cf("MQPASS"))
-mqconnection = pika.BlockingConnection(pika.ConnectionParameters(
-        host=cf("EC2"), port=cf("MQPORT"), virtual_host=cf("MQVHOST"), credentials=mqcredentials))
-mqchannel = mqconnection.channel()
-mqchannel.exchange_declare(exchange=cf("MQEXCHANGE"), type='fanout', durable=True, auto_delete=False)
 
 # Global datastructures for keeping track of queries
 query_threads = dict()
 qid_counter = 0
 qid_lock = Lock()
-
-class QueryThread(Thread):
-   """
-   Thread to handle a query request. Used to create, monitor, and retain accessor 
-   information of a crawl request.
-   """
-   def __init__(self, q, d, qid):
-      self.query = q
-      self.start_url = q
-      self.max_depth = d
-      self.qid = qid
-      self.qstatus = "Waiting"
-      self.crawlstatus = None
-      self.dbkey = None
-      Thread.__init__(self)
-      
-   def run(self):
-      """
-      Dispatches all async celery crawl/parse requests and waits for result.
-      Inserts result into mongodb.
-      """
-      global mqchannel
-      self.qstatus = "Running"
-      self.crawl_async_result = crawl.apply_async(args=[self.start_url, self.max_depth, "keyword"], serializer="json")
-      while not self.crawl_async_result.ready():
-         time.sleep(0)
-      
-      # self.crawl_async_result is a list of { URLs, links, htmls } to be parsed
-      
-      self.crawlstatus = "Done"
-      # print "Crawl Done"
-      print json.dumps(self.crawl_async_result.result, indent=4)
-      
-      self.__insert_into_db(self.crawl_async_result.result)
-      content = json.dumps({"query_id":self.qid, "message":"done", "dbkey":str(self.dbkey)});
-      mqchannel.basic_publish(exchange=cf("MQEXCHANGE"), routing_key='', body=content)
-      
-   
-   def __insert_into_db(self, data):
-      global collection, mqchannel
-      self.dbkey = collection.insert({"data":data})
-      self.qstatus = "Done"
-   
-   def get_query(self):
-      return self.query
-   
-   def get_status(self):
-      return {"query_id":self.qid, "status":self.qstatus, "crawlstatus":self.crawlstatus, "dbkey":str(self.dbkey)}
 
 # return either waiting, running, or done
 # if running, return some sort of status data
@@ -176,6 +92,9 @@ def get_query(qid):
    if qid not in query_threads:
       abort(404, "Query not found.")
    else:
+      # make a thread
+      
+      # join the thread, kindof blocking but that's okay
       response.set_header('Content-Type', 'application/json')
       return get_query_status(qid)
 
@@ -188,7 +107,7 @@ def get_data(key):
    # TODO: Need to make sure the query is finshed
    response.set_header('Content-Type', 'application/json')
    oid = objectid.ObjectId(key)
-   res = collection.find_one({"_id":oid})
+   res = config.collection.find_one({"_id":oid})
    return json.dumps(res['data'])
 
 @delete('/api/queries/<qid:int>')
@@ -202,6 +121,22 @@ def delete_query(qid):
    else:
       abort(501, "Not Implemented")
       return "Method Not Implemented"
+
+@get('/api/search/<q>')
+def run_search(q):
+   """
+   Runs a search on tag-stripped parsed results.
+   Path: GET /api/search/<q>
+   """
+   if not q:
+      abort(404, "Invalid Query")
+   else:
+      s = SearchThread(urllib2.unquote_plus(q))
+      s.start()
+      s.join()
+      response.set_header('Content-Type', 'application/json')
+      return s.get_results()
+      
 
 @get('/api/server_stats')
 def get_server_stats():
@@ -219,10 +154,10 @@ def get_server_stats():
       "memory":p.get_memory_info(),
       "connections":p.get_connections(kind='all'),
       'mongodb': {
-         'host': connection.host,
-         'port': connection.port,
-         'db': db.name,
-         'collection_name': collection.name
+         'host': config.connection.host,
+         'port': config.connection.port,
+         'db': config.db.name,
+         'collection_name': config.collection.name
       }
    }
 
@@ -236,10 +171,10 @@ def error501(error):
 def error404(error):
     return 'Query or Method Not Found'
 
-run(host=cf("API_HOST"), port=cf("API_PORT"))
+run(host=config.get("API_HOST"), port=config.get("API_PORT"))
 
 @atexit.register
 def goodbye():
-   mqconnection.close()
-   connection.close()
+   config.mqconnection.close()
+   config.connection.close()
    print "PyQA says goodbye."

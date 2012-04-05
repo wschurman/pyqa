@@ -1,0 +1,15 @@
+script(type='text/javascript', src='/js/query.js')
+h1= title
+
+section#query-form
+  form.form-horizontal#queryform
+    fieldset
+      legend PyQA Query
+      .control-group
+        label(for="search").control-label Search
+        .controls
+          input(type="text", value="hello").input-xlarge#search
+      .form-actions
+        input(type="submit").btn.btn-primary Go
+
+section#results
