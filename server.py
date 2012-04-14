@@ -3,9 +3,9 @@ from query import QueryThread
 from search import SearchThread
 
 import atexit
-import urllib2
+import urllib
 from bson import objectid
-import psutil, os, time, sys
+import psutil, os, time, sys, json
 from threading import Thread, Lock
 from bottle import route, run, request, abort, get, post, delete, error, response
 
@@ -131,11 +131,11 @@ def run_search(q):
    if not q:
       abort(404, "Invalid Query")
    else:
-      s = SearchThread(urllib2.unquote_plus(q))
+      s = SearchThread(urllib.unquote_plus(q))
       s.start()
       s.join()
       response.set_header('Content-Type', 'application/json')
-      return s.get_results()
+      return json.dumps(s.get_results())
       
 
 @get('/api/server_stats')

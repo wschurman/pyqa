@@ -97,6 +97,26 @@ everyone.now.sendCrawlRequest = function(req) {
    });
 };
 
+everyone.now.sendSearchRequest = function(req) {
+   var me = this;
+   // send out api call to pyqa api server
+   var opts = {
+      url: apiuri("search/"+req.search)
+   };
+
+   api.get(opts, function(err, resp, body) {
+   	if (!err && resp.statusCode == 200) {
+   	   me.now.receiveSearchResults(body);
+   	} else {
+   	   me.now.receiveSearchResults(err);
+   	}
+   });
+};
+
+everyone.now.sendDeleteRequest = function(req) {
+   // send out api delete call
+};
+
 getData = function(key, cb) {
    // query mongo
    
@@ -118,10 +138,6 @@ getData = function(key, cb) {
    });
 }
 
-everyone.now.sendDeleteRequest = function(req) {
-   // send out api delete call
-};
-
 // CPU Usage with now.js
 
 String.prototype.trim = function() {
@@ -138,9 +154,9 @@ var output = function(output_data) {
    output_hash = {
       date:new Date(),
       cpu:{
-         us:output_array[9],
-         sy:output_array[10],
-         id:output_array[11]
+         us:output_array[3],
+         sy:output_array[4],
+         id:output_array[5]
       }
    };
 

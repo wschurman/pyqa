@@ -1,3 +1,5 @@
+import config
+
 from bson.code import Code
 from threading import Thread, Lock
 
@@ -5,31 +7,25 @@ class SearchThread(Thread):
    """
    Thread to handle running MapReduce job on MongoDB collection for a search term.
    """
-   map = Code( "function () {"
-               "  this.tags.forEach(function(z) {"
-               "    emit(z, 1);"
-               "  });"
-               "}")
-   reduce = Code(    "function (key, values) {"
-                     "  var total = 0;"
-                     "  for (var i = 0; i < values.length; i++) {"
-                     "    total += values[i];"
-                     "  }"
-                     "  return total;"
-                     "}")
    
    def __init__(self, q):
       self.q = q
-      self.resultkey = None
+      self.results = None
       Thread.__init__(self)
    
    def run(self):
       """
       Dispatches MapReduce job to MongoDB collection and waits for result.
       """
-      # query mr
-      # block until query is complete
-      # self.resultkey = results
+      map = Code(open("search/map.js", 'r').read().replace("%q%", self.q))
+      reduce = Code(open("search/reduce.js", 'r').read())
+      
+      self.results = config.collection.map_reduce(map, reduce, out="search_collection", query={"parse_type":"strip"})
       
    def get_results(self):
-      return {"dbkey":str(self.resultkey)}
+      """ huh """
+      ret = list()
+      for d in self.results.find():
+         ret.append(d)
+      return ret
+      # return {"dbkey":str(self.resultkey)}

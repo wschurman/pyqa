@@ -1,18 +1,10 @@
-import mechanize
-from urlparse import urljoin
+import config
+from bson.code import Code
 
-url = "http://news.ycodededembinator.com/"
+map = Code(open("search/map.js", 'r').read())
+reduce = Code(open("search/reduce.js", 'r').read())
 
-br = mechanize.Browser()
-br.set_handle_robots(False)
-br.set_handle_referer(False)
-try:
-   response = br.open(url)
-except:
-   raise mechanize.URLError(url)
+results = config.collection.map_reduce(map, reduce, out="hahah")
 
-for link in br.links():
-	furl = urljoin(url, link.url) #TODO: fix
-	print furl
-	
-# print response.read()
+for result in results.find():
+   print result

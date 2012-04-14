@@ -29,7 +29,7 @@ class QueryThread(Thread):
       print "CAlled run in querythread"
       #global config.mqchannel
       self.qstatus = "Running"
-      self.crawl_async_result = crawl.apply_async(args=[self.start_url, self.max_depth, "keyword"], serializer="json")
+      self.crawl_async_result = crawl.apply_async(args=[self.start_url, self.max_depth, "strip"], serializer="json")
       while not self.crawl_async_result.ready():
          time.sleep(0)
       
@@ -46,7 +46,7 @@ class QueryThread(Thread):
    
    def __insert_into_db(self, data):
       #global config.collection, config.mqchannel
-      self.dbkey = config.collection.insert({"data":data})
+      self.dbkey = config.collection.insert({"data":data, "parse_type":"strip"})
       self.qstatus = "Done"
    
    def get_query(self):

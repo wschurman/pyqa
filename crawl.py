@@ -106,16 +106,16 @@ def get_content(url, callback=None):
 	br.set_handle_robots(False)
 	br.set_handle_referer(False)
 	try:
-		 response = br.open(url)
+		response = br.open(url)
 	except:
-		 raise mechanize.URLError(url)
+		raise mechanize.URLError(url)
 	final_links = []
 	for link in br.links():
 		furl = urljoin(url, link.url) #TODO: fix
 		final_links.append(furl)
 	html = response.read()
 	ret = {"links":final_links}
-	resp = {"url": url, "links": final_links, "html":str(html)}
+	resp = {"url": url, "links": final_links, "html":str(''.join([x for x in html if ord(x) < 128]))}
 	if callback is not None:
 		ret["subtask"] = subtask(callback).apply_async(args=[resp], serializer="json", expires=5)
 	return ret # opened successfully

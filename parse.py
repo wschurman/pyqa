@@ -1,6 +1,6 @@
 from celery.task import task
 
-from parser import KeywordExtracter, SourceCiter
+from parser import KeywordExtracter, SourceCiter, StripTags
 
 # crawldata is in form {"url": url, "links": final_links, "html":str(html)}
 
@@ -22,4 +22,5 @@ def parse(crawldata, p):
 	
 	parser_module.parse()
 	return_data["parse_results"] = parser_module.get_parsed_data()
+	del return_data['html']
 	return return_data
