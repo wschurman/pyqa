@@ -9,7 +9,7 @@ then
 fi
 
 echo -n "Starting API Server..."
-python $PWD/server.py > $PWD/logs/api.log 2>&1 &
+python $PWD/api/server.py > $PWD/logs/api.log 2>&1 &
 echo "done"
 
 echo -n "Starting Node Frontend..."

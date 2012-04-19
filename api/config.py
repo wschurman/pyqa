@@ -1,10 +1,11 @@
 import pika
 import json
 import pymongo
+import os.path
 from pymongo import Connection
 
 # load cross language config
-cfile = open('pyqaconfig.json')
+cfile = open(os.path.dirname(__file__) + '/../pyqaconfig.json')
 config = json.load(cfile)
 cfile.close()
 
