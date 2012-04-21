@@ -97,6 +97,10 @@ everyone.now.sendCrawlRequest = function(req) {
    });
 };
 
+search_sort = function(a, b) {
+   return (b.value - a.value);
+}
+
 everyone.now.sendSearchRequest = function(req) {
    var me = this;
    // send out api call to pyqa api server
@@ -106,7 +110,9 @@ everyone.now.sendSearchRequest = function(req) {
 
    api.get(opts, function(err, resp, body) {
    	if (!err && resp.statusCode == 200) {
-   	   me.now.receiveSearchResults(body);
+   	   var p = JSON.parse(body);
+   	   p.sort(search_sort);
+   	   me.now.receiveSearchResults(p);
    	} else {
    	   me.now.receiveSearchResults(err);
    	}
@@ -144,7 +150,17 @@ String.prototype.trim = function() {
    return this.replace(/^\s+|\s+$/g,"");
 }
 
+var fst = true;
+var start_index = 0;
+
 var output = function(output_data) {
+   if (fst) {
+      var numdisk = output_data.toString().trim().match(/disk/g).length;
+      start_index = numdisk * 3;
+      fst = false;
+      return;
+   }
+   
    var output_array = output_data.toString().trim().split(/\s+/);
 
    for (var i=0; i < output_array.length; i++) {
@@ -154,9 +170,9 @@ var output = function(output_data) {
    output_hash = {
       date:new Date(),
       cpu:{
-         us:output_array[3],
-         sy:output_array[4],
-         id:output_array[5]
+         us:output_array[start_index],
+         sy:output_array[start_index+1],
+         id:output_array[start_index+2]
       }
    };
 

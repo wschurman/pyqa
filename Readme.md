@@ -8,8 +8,8 @@ ToDo
 
 * Implement a research paper writer on top of the crawler QA system
 * Create a monitoring API in node.js that runs on each worker and provides a TCP endpoint API for requesting status data, memory, cpu, etc...
+* In python, make a worker monitor function or integrate into status function.
 * Persist all queries ever performed, i.e. make all queries searchable, and use as cache.
-* Clean up search and print time it took
 
 Contributors
 =============
