@@ -60,14 +60,16 @@ app.configure('production', function(){
 app.get('/', routes.index);
 app.get('/docs', routes.docs);
 app.get('/about', routes.about);
-app.get('/query', routes.query);
+app.get('/query/:id', function(req, res) {
+    res.render('query', {title : 'Query', id: req.params.id});
+});
 app.get('/data/:id', function(req, res){
    getData(req.params.id, function(dat) {
       console.log(dat);
       if (dat.err) {
          res.send('huh?', 404);
       } else {
-         res.render('data', { title: 'Data', d:dat.doc.data }) 
+         res.render('data', { title: 'Data', d:dat.doc.data }) ;
       }
    });
 });
@@ -105,7 +107,7 @@ everyone.now.sendSearchRequest = function(req) {
    var me = this;
    // send out api call to pyqa api server
    var opts = {
-      url: apiuri("search/"+req.search)
+      url: apiuri("search/"+req.id+"/"+req.search)
    };
 
    api.get(opts, function(err, resp, body) {
@@ -153,11 +155,16 @@ String.prototype.trim = function() {
 var fst = true;
 var start_index = 0;
 
+var iostat = spawn('iostat', ["-w 1"]);
+
 var output = function(output_data) {
    if (fst) {
       var numdisk = output_data.toString().trim().match(/disk/g).length;
       start_index = numdisk * 3;
       fst = false;
+      if (numdisk == 0) {
+          iostat.kill();
+      }
       return;
    }
    
@@ -183,13 +190,12 @@ var output = function(output_data) {
    }
 };
 
-var iostat = spawn('iostat', ["-w 1"]);
 iostat.stdout.on('data', output);
 
 var deliverMessage = function(m) {
    if (m.query_id) {
       getData(m.dbkey, function(d) {
-         requests[m.query_id].ev.now.receiveResults(d.doc.data);
+         requests[m.query_id].ev.now.receiveResults({dbkey: m.dbkey, data:d.doc.data});
       });
    } else {
       everyone.now.receiveMessage(m);

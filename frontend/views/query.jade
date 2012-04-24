@@ -9,6 +9,7 @@ section#query-form
         label(for="search").control-label Search
         .controls
           input(type="text", value="hello").input-xlarge#search
+          input(type="hidden", value="#{id}")#qid
       .form-actions
         input(type="submit").btn.btn-primary Go
 

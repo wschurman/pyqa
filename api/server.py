@@ -122,16 +122,16 @@ def delete_query(qid):
       abort(501, "Not Implemented")
       return "Method Not Implemented"
 
-@get('/api/search/<q>')
-def run_search(q):
+@get('/api/search/<key>/<q>')
+def run_search(key, q):
    """
    Runs a search on tag-stripped parsed results.
    Path: GET /api/search/<q>
    """
-   if not q:
+   if not q or not key:
       abort(404, "Invalid Query")
    else:
-      s = SearchThread(urllib.unquote_plus(q))
+      s = SearchThread(key, urllib.unquote_plus(q))
       s.start()
       s.join()
       response.set_header('Content-Type', 'application/json')

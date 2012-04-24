@@ -5,7 +5,7 @@ $(document).ready(function(){
       
       var st = "";
       for (var i in res) {
-         st += "<li class='result'>"+res[i]._id+" ("+res[i].value+" occurences)</li>";
+         st += "<li class='result'><a href='"+res[i]._id+"'>"+res[i]._id+"</a> ("+res[i].value+" occurences)</li>";
       }
       
       $("#results").append("<ol class='well'>"+st+"</ol>");
@@ -13,8 +13,10 @@ $(document).ready(function(){
 
    $("#queryform").submit(function() {
       var s = $("#search").val();
+      var id = $("#qid").val();
       var req = {
-         "search": s
+         "search": s,
+         "id": id
       };
 
       now.sendSearchRequest(req);
