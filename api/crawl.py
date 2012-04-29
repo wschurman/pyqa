@@ -33,7 +33,7 @@ class ScraperWorker(Thread):
 		subworkers = []
 		
 		
-		self.async_result = get_content.apply_async(args=[self.url, parse.subtask((self.parser, ))], serializer="json", expires=10)
+		self.async_result = get_content.apply_async(args=[self.url, parse.subtask((self.parser, ))], serializer="json", expires=20)
 		
 		# get first result to extract links
 		while not self.async_result.ready():
@@ -117,6 +117,6 @@ def get_content(url, callback=None):
 	ret = {"links":final_links}
 	resp = {"url": url, "links": final_links, "html":str(''.join([x for x in html if ord(x) < 128]))}
 	if callback is not None:
-		ret["subtask"] = subtask(callback).apply_async(args=[resp], serializer="json", expires=5)
+		ret["subtask"] = subtask(callback).apply_async(args=[resp], serializer="json", expires=20)
 	return ret # opened successfully
 		

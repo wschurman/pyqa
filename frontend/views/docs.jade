@@ -1,2 +1,50 @@
 h1= title
 p Welcome to #{title}
+
+h2 REST API is located at #{apiuri("")}
+
+h3 Queries
+p Methods for queries
+
+b GET /api/queries
+p List all queries
+
+br
+b POST /api/queries
+p JSON POST body of the following form required: {"query":"hello", "depth":4}
+| Content-type header must be application/json.
+
+br
+br
+b GET /api/queries/<query_id>
+p Retrieves a QueryThread's status.
+
+br
+br
+h3 Data
+p Functions for retrieving data from a query
+
+br
+b GET /api/data/<key>
+p Retrieves a QueryThread's data given a specified mongodb key.
+
+br
+br
+h3 Search
+p Methods for initiating searches on query results
+
+br
+b GET /api/search/<q>
+p Runs a search on tag-stripped parsed results.
+
+br
+br
+h3 General
+
+br
+b GET /api/server_stats
+p Retrieves all server information.
+
+br
+b GET /api/status
+p Provides an endpoint for checking if server is up.

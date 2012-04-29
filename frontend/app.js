@@ -58,7 +58,9 @@ app.configure('production', function(){
 // Routes
 
 app.get('/', routes.index);
-app.get('/docs', routes.docs);
+app.get('/docs', function(req, res){
+  res.render('docs', { title: 'Documentation', config: config, apiuri: apiuri });
+});
 app.get('/about', routes.about);
 app.get('/query/:id', function(req, res) {
     res.render('query', {title : 'Query', id: req.params.id});
@@ -192,13 +194,18 @@ var output = function(output_data) {
 
 iostat.stdout.on('data', output);
 
-var deliverMessage = function(m) {
-   if (m.query_id) {
-      getData(m.dbkey, function(d) {
-         requests[m.query_id].ev.now.receiveResults({dbkey: m.dbkey, data:d.doc.data});
+var deliverMessage = function(qid, dbkey, time, message) {
+   if (qid) {
+      getData(dbkey, function(d) {
+         if (!d.doc) {
+            console.log("NODATA: "+dbkey);
+            deliverMessage(qid, dbkey, time, null);
+            return;
+         }
+         requests[qid].ev.now.receiveResults({dbkey: dbkey, time: time, data:d.doc.data});
       });
    } else {
-      everyone.now.receiveMessage(m);
+      everyone.now.receiveMessage(message);
    }
 }
 
@@ -208,7 +215,7 @@ mqconnection.on('ready', function() {
    q.subscribe(function (message, headers, deliveryInfo) {
       var p = JSON.parse(message.data.toString());
       console.log(p);
-      deliverMessage(p);
+      deliverMessage(p.query_id, p.dbkey, p.time, null);
    });
 });
 

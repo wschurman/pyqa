@@ -20,6 +20,7 @@ class QueryThread(Thread):
       self.qstatus = "Waiting"
       self.crawlstatus = None
       self.dbkey = None
+      self.elapsed = None
       Thread.__init__(self)
       
    def run(self):
@@ -30,6 +31,8 @@ class QueryThread(Thread):
       print "CAlled run in querythread"
       #global config.mqchannel
       self.qstatus = "Running"
+      start = time.clock()
+      
       self.crawl_async_result = crawl.apply_async(args=[self.start_url, self.max_depth, self.parser], serializer="json")
       while not self.crawl_async_result.ready():
          time.sleep(0)
@@ -37,11 +40,12 @@ class QueryThread(Thread):
       # self.crawl_async_result is a list of { URLs, links, htmls } to be parsed
       
       self.crawlstatus = "Done"
+      self.elapsed = (time.clock() - start)
       print "Crawl Done"
       print json.dumps(self.crawl_async_result.result, indent=4)
       
       self.__insert_into_db(self.crawl_async_result.result)
-      content = json.dumps({"query_id":self.qid, "message":"done", "dbkey":str(self.dbkey)});
+      content = json.dumps({"query_id":self.qid, "message":"done", "dbkey":str(self.dbkey), "time":self.elapsed});
       config.mqchannel.basic_publish(exchange=config.get("MQEXCHANGE"), routing_key='', body=content)
       
    

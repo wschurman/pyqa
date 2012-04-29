@@ -8,7 +8,7 @@ $(document).ready(function(){
          st += "<li class='result'><a href='"+res[i]._id+"'>"+res[i]._id+"</a> ("+res[i].value+" occurences)</li>";
       }
       
-      $("#results").append("<ol class='well'>"+st+"</ol>");
+      $("#results").prepend("<ol class='well'>"+st+"</ol>");
    }
 
    $("#queryform").submit(function() {
