@@ -9,6 +9,16 @@ section {
 	width: 100%;
 }
 
+ol {
+    padding-left: 40px !important;
+}
+
+div.well {
+    max-height: 250px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
 @media (max-width: 480px) {
   body {
     padding-top: 70px;

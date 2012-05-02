@@ -9,7 +9,7 @@ section#req-form
       .control-group
         label(for="url").control-label Crawl Start URL
         .controls
-          input(type="text", value="http://localhost/pyqa/").input-xlarge#url
+          input(type="text", value="http://schurmandesign.com/").input-xlarge#url
       .control-group
         label(for="depth").control-label Crawl Depth
         .controls
@@ -17,16 +17,16 @@ section#req-form
       .form-actions
         input(type="submit").btn.btn-primary Crawl
 
-section#results
-
 section#montors
-  .well
-    h3 Server CPU Usage
-    canvas(width="400", height="100")#cpucanvas &nbsp;
-    .row
-      .span2
-        p Red = System
-      .span2
-        p Blue = Idle
-      .span2
-        p Green = User
+ .well
+   h3 Server CPU Usage
+   canvas(width="400", height="100")#cpucanvas &nbsp;
+   .row
+     .span2
+       p Red = System
+     .span2
+       p Blue = Idle
+     .span2
+       p Green = User
+
+section#results
