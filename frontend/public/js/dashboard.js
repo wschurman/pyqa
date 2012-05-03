@@ -25,7 +25,7 @@ $(document).ready(function(){
    now.receiveResults = function(res) {
       console.log(res);
       var link = "<a href='./query/"+res.dbkey+"'>Run Query</a><br /><br />";
-      $("#results").prepend("<div class='well'>"+link+JSON.stringify(res)+"</div>");
+      $("#results").prepend("<div class='well'>"+link+JSON.stringify(res).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")+"</div>");
    }
    
    now.receiveMessage = function(m) {
